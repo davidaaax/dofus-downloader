@@ -34,6 +34,7 @@ MINOR_VERSION=0
 ```
 
 ⚠️ Plateform : windows / darwin (mac) / linux
+
 ⚠️ Leave the minor and major versions at 0 if you don't know which version to download
 
 ## Output
