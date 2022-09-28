@@ -3,6 +3,7 @@ const fse = require('fs-extra');
 const fs = require('fs');
 const Path = require('path');
 const pb = require('progress');
+const crypto = require('crypto');
 
 import * as figlet from 'figlet';
 import colors from 'colors';
@@ -62,6 +63,16 @@ export default class App {
 
         this.downloadFiles();
     }
+    
+    public async checksumFile(hashName:string, path:string) {
+        return new Promise((resolve, reject) => {
+          const hash = crypto.createHash(hashName);
+          const stream = fs.createReadStream(path);
+          stream.on('error', (err: any) => reject(err));
+          stream.on('data', (chunk: any) => hash.update(chunk));
+          stream.on('end', () => resolve(hash.digest('hex')));
+        });
+    }
 
     public async downloadFiles() {
         console.log(colors.green(`Starting download ${this.version}.${this.majorVersion}.${this.minorVersion}...`));
@@ -69,7 +80,13 @@ export default class App {
         const files = json.main.files;
         for (let filename in files) {
             const hash = files[filename]['hash'];
-            const response = await this.downloadFile(filename, hash);
+            // check if file exists
+            const path = Path.resolve(__dirname, `../tmp/client-${this.plateform}-${this.version}.${this.majorVersion}.${this.minorVersion}`, filename);
+            if (!fs.existsSync(path) || (await this.checksumFile('sha1', path)) !== hash) {
+                const response = await this.downloadFile(filename, hash);
+            } else {
+                console.log(colors.green(`File ${filename} already exists !`));
+            }
         }
         console.log(colors.green('Downloading finished !'));
         return;
